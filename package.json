@@ -1,0 +1,13 @@
+{
+  "name": "ping-view",
+  "source":"index.html vanilla.js",
+  "browserslist": "> 0.5%, last 2 versions, not dead",
+  "scripts": {
+    "start": "parcel index.html",
+    "build": "parcel build index.html"
+  },
+  "devDependencies": {
+    "parcel": "latest",
+    "process": "^0.11.10"
+  }
+}

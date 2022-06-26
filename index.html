@@ -1,4 +1,3 @@
-
 <style>
     body {
         margin: 0;
@@ -7,381 +6,380 @@
     }
 </style>
 
-    <canvas></canvas>
-    <script>
-        const URL_PARAMS = new URLSearchParams(location.search)
+<canvas></canvas>
+<script>
+    const URL_PARAMS = new URLSearchParams(location.search)
 
-        const C = document.querySelector('canvas')
-        const CTX = C.getContext('2d')
-        C.width = innerWidth
-        C.height = innerHeight
+    const C = document.querySelector('canvas')
+    const CTX = C.getContext('2d')
+    C.width = innerWidth
+    C.height = innerHeight
 
-        const DEFAULT_CHAR_WIDTH = CTX.measureText('M').width
-        const DEFAULT_CHAR_HEIGHT = 16
+    const DEFAULT_CHAR_WIDTH = CTX.measureText('M').width
+    const DEFAULT_CHAR_HEIGHT = 16
 
-        const welcomeTitle = ` 
-==================================================================================================================================================================================================================
-                                                                                                         
-██╗    ██╗███████╗██████╗     ██╗      ██████╗  ██████╗ █████╗ ██╗         ██████╗ ██╗███╗   ██╗ ██████╗ 
-██║    ██║██╔════╝██╔══██╗    ██║     ██╔═══██╗██╔════╝██╔══██╗██║         ██╔══██╗██║████╗  ██║██╔════╝ 
-██║ █╗ ██║█████╗  ██████╔╝    ██║     ██║   ██║██║     ███████║██║         ██████╔╝██║██╔██╗ ██║██║  ███╗
-██║███╗██║██╔══╝  ██╔══██╗    ██║     ██║   ██║██║     ██╔══██║██║         ██╔═══╝ ██║██║╚██╗██║██║   ██║
-╚███╔███╔╝███████╗██████╔╝    ███████╗╚██████╔╝╚██████╗██║  ██║███████╗    ██║     ██║██║ ╚████║╚██████╔╝
- ╚══╝╚══╝ ╚══════╝╚═════╝     ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝╚══════╝    ╚═╝     ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
-                                                                                                         
- ==================================================================================================================================================================================================================
+    const welcomeTitle = ` 
+============================================================
+                                                            
+██╗    ██╗███████╗██████╗     ██████╗ ██╗███╗   ██╗ ██████╗ 
+██║    ██║██╔════╝██╔══██╗    ██╔══██╗██║████╗  ██║██╔════╝ 
+██║ █╗ ██║█████╗  ██████╔╝    ██████╔╝██║██╔██╗ ██║██║  ███╗
+██║███╗██║██╔══╝  ██╔══██╗    ██╔═══╝ ██║██║╚██╗██║██║   ██║
+╚███╔███╔╝███████╗██████╔╝    ██║     ██║██║ ╚████║╚██████╔╝
+ ╚══╝╚══╝ ╚══════╝╚═════╝     ╚═╝     ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+                                                            
+============================================================
  `
-        const WELCOMETITLE_LINE_CHARS = 105
-        const DEFAULT_CURSOR_HEIGHT = DEFAULT_CHAR_HEIGHT - 12
-        const CONTINUOUS_PING_TIMES = 6
-        const DEFAULT_CURSOR_WIDTH = DEFAULT_CHAR_WIDTH - 4
-        const ANIMATION_SPEED = 1
-        // const VERSION = require('./package.json').version
-        const VERSION = '0.3.1'
-        const MIRROR_LIST = {
-            Netease: 'http://mirrors.163.com/ubuntu/errorfileccccc',
-            Sohu: 'https://mirrors.sohu.com/errorfileccccc',
-            Huawei: 'https://repo.huaweicloud.com/ubuntu/errorfileccccc',
-            Ali: 'https://mirrors.aliyun.com/ubuntu/errorfileccccc',
-            Tencent: 'https://mirrors.cloud.tencent.com/errorfileccccc',
-            Douban: 'https://pypi.doubanio.com/errorfileccccc',
-            YunIdc: 'https://mirrors.yun-idc.com/errorfileccccc',
-            Pubyun: 'https://mirrors.pubyun.com/errorfileccccc',
-            Koddos: 'https://mirror-hk.koddos.net/errorfileccccc',
-            Kumi: 'https://mirror.kumi.systems/errorfileccccc',
-            Bitcomm: 'https://centos.bitcomm.cn/errorfileccccc',
-            Skyshe: 'http://mirrors.skyshe.cn/errorfileccccc',
-            Taobaonpm: 'https://registry.npmmirror.com/errorfileccccc',
-            Linuxeye: 'http://mirrors.linuxeye.com/errorfileccccc',
-            SjuE: 'https://mirrors.zju.edu.cn/errorfileccccc',
-            SjtuE: 'https://mirror.sjtu.edu.cn/errorfileccccc',
-            CquE: 'https://mirrors.cqu.edu.cn/errorfileccccc',
-            BfsuE: 'https://mirrors.bfsu.edu.cn/errorfileccccc',
-            TsinghuaE: 'https://mirrors.tuna.tsinghua.edu.cn/errorfileccccc',
-            CquptE: 'https://mirrors.cqupt.edu.cn/errorfileccccc',
-            WsyuE: 'https://mirrors.wsyu.edu.cn/errorfileccccc',
-            NjuE: 'https://mirror.nju.edu.cn/errorfileccccc',
-            ScauE: 'https://mirrors.scau.edu.cn/errorfileccccc',
-            HitE: 'https://mirrors.hit.edu.cn/errorfileccccc',
-            Cnnic: 'https://mirrors.cnnic.cn/errorfileccccc',
-            SdwuE: 'https://mirrors.sdwu.edu.cn/errorfileccccc',
+    const WELCOMETITLE_LINE_CHARS = 60
+    const DEFAULT_CURSOR_HEIGHT = DEFAULT_CHAR_HEIGHT - 12
+    const CONTINUOUS_PING_TIMES = 6
+    const DEFAULT_CURSOR_WIDTH = DEFAULT_CHAR_WIDTH - 4
+    const ANIMATION_SPEED = 1
+    // const VERSION = require('./package.json').version
+    const VERSION = '0.3.1'
+    const MIRROR_LIST = {
+        Netease: 'http://mirrors.163.com/ubuntu/errorfileccccc',
+        Sohu: 'https://mirrors.sohu.com/errorfileccccc',
+        Huawei: 'https://repo.huaweicloud.com/ubuntu/errorfileccccc',
+        Ali: 'https://mirrors.aliyun.com/ubuntu/errorfileccccc',
+        Tencent: 'https://mirrors.cloud.tencent.com/errorfileccccc',
+        Douban: 'https://pypi.doubanio.com/errorfileccccc',
+        YunIdc: 'https://mirrors.yun-idc.com/errorfileccccc',
+        Pubyun: 'https://mirrors.pubyun.com/errorfileccccc',
+        Koddos: 'https://mirror-hk.koddos.net/errorfileccccc',
+        Kumi: 'https://mirror.kumi.systems/errorfileccccc',
+        Bitcomm: 'https://centos.bitcomm.cn/errorfileccccc',
+        Skyshe: 'http://mirrors.skyshe.cn/errorfileccccc',
+        Taobaonpm: 'https://registry.npmmirror.com/errorfileccccc',
+        Linuxeye: 'http://mirrors.linuxeye.com/errorfileccccc',
+        SjuE: 'https://mirrors.zju.edu.cn/errorfileccccc',
+        SjtuE: 'https://mirror.sjtu.edu.cn/errorfileccccc',
+        CquE: 'https://mirrors.cqu.edu.cn/errorfileccccc',
+        BfsuE: 'https://mirrors.bfsu.edu.cn/errorfileccccc',
+        TsinghuaE: 'https://mirrors.tuna.tsinghua.edu.cn/errorfileccccc',
+        CquptE: 'https://mirrors.cqupt.edu.cn/errorfileccccc',
+        WsyuE: 'https://mirrors.wsyu.edu.cn/errorfileccccc',
+        NjuE: 'https://mirror.nju.edu.cn/errorfileccccc',
+        ScauE: 'https://mirrors.scau.edu.cn/errorfileccccc',
+        HitE: 'https://mirrors.hit.edu.cn/errorfileccccc',
+        Cnnic: 'https://mirrors.cnnic.cn/errorfileccccc',
+        SdwuE: 'https://mirrors.sdwu.edu.cn/errorfileccccc',
+    }
+
+    let skipAnimation = false
+    let writing = false
+
+    let currentColumn = 1
+    let currentLine = 1
+
+    let frameRendered = 0
+
+    const callFn = (fn) => fn()
+
+    const drawChars = (
+        text,
+        x,
+        y,
+        textColor = '#0a0',
+        cursorColor = '#fff',
+        highlighColor = '#0f0',
+        cursor = true
+    ) => {
+        let [_x, _y, c, l] = []
+        if (cursor) {
+            CTX.fillStyle = cursorColor
+            CTX.fillRect(
+                x + DEFAULT_CHAR_WIDTH * 2,
+                y - DEFAULT_CURSOR_HEIGHT,
+                DEFAULT_CURSOR_WIDTH,
+                DEFAULT_CURSOR_HEIGHT
+            )
+            CTX.clearRect(
+                x + DEFAULT_CHAR_WIDTH,
+                y - DEFAULT_CURSOR_HEIGHT,
+                DEFAULT_CURSOR_WIDTH,
+                DEFAULT_CURSOR_HEIGHT
+            )
         }
 
-        let skipAnimation = false
-        let writing = false
+        CTX.fillStyle = textColor
+        CTX.fillText(text[0], x + DEFAULT_CHAR_WIDTH, y)
+        text.shift()
+        frameRendered++
+        if (undefined === text[0]) {
+            writing = false
+            CTX.clearRect(
+                x + DEFAULT_CHAR_WIDTH * 2,
+                y - DEFAULT_CURSOR_HEIGHT,
+                DEFAULT_CURSOR_WIDTH,
+                DEFAULT_CURSOR_HEIGHT
+            )
+            return [x, y, currentColumn, currentLine]
+        }
+        CTX.fillStyle = highlighColor
+        CTX.fillText(text[0], x + DEFAULT_CHAR_WIDTH * 2, y)
 
-        let currentColumn = 1
-        let currentLine = 1
+        eval(
+            frameRendered % ANIMATION_SPEED === 0 && !skipAnimation
+                ? 'requestAnimationFrame'
+                : 'callFn'
+        )(() =>
+            drawChars(
+                text,
+                x + DEFAULT_CHAR_WIDTH,
+                y,
+                textColor,
+                cursorColor,
+                highlighColor,
+                cursor
+            )
+        )
+        return [x + DEFAULT_CHAR_WIDTH, y, currentColumn, currentLine]
+    }
 
-        let frameRendered = 0
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-        const callFn = (fn) => fn()
-
-        const drawChars = (
-            text,
-            x,
-            y,
-            textColor = '#0a0',
-            cursorColor = '#fff',
-            highlighColor = '#0f0',
-            cursor = true
-        ) => {
-            let [_x, _y, c, l] = []
-            if (cursor) {
-                CTX.fillStyle = cursorColor
-                CTX.fillRect(
-                    x + DEFAULT_CHAR_WIDTH * 2,
-                    y - DEFAULT_CURSOR_HEIGHT,
-                    DEFAULT_CURSOR_WIDTH,
-                    DEFAULT_CURSOR_HEIGHT
-                )
-                CTX.clearRect(
-                    x + DEFAULT_CHAR_WIDTH,
-                    y - DEFAULT_CURSOR_HEIGHT,
-                    DEFAULT_CURSOR_WIDTH,
-                    DEFAULT_CURSOR_HEIGHT
-                )
-            }
-
-            CTX.fillStyle = textColor
-            CTX.fillText(text[0], x + DEFAULT_CHAR_WIDTH, y)
-            text.shift()
-            frameRendered++
-            if (undefined === text[0]) {
-                writing = false
-                CTX.clearRect(
-                    x + DEFAULT_CHAR_WIDTH * 2,
-                    y - DEFAULT_CURSOR_HEIGHT,
-                    DEFAULT_CURSOR_WIDTH,
-                    DEFAULT_CURSOR_HEIGHT
-                )
-                return [x, y, currentColumn, currentLine]
-            }
-            CTX.fillStyle = highlighColor
-            CTX.fillText(text[0], x + DEFAULT_CHAR_WIDTH * 2, y)
-
-            eval(
-                frameRendered % ANIMATION_SPEED === 0 && !skipAnimation
-                    ? 'requestAnimationFrame'
-                    : 'callFn'
-            )(() =>
-                drawChars(
-                    text,
-                    x + DEFAULT_CHAR_WIDTH,
+    const _writeText = (
+        text,
+        x,
+        y,
+        textColor = '#0a0',
+        cursorColor = '#fff',
+        highlighColor = '#0f0',
+        cursor = true
+    ) => {
+        let [_x, _y, c, l] = []
+        if (!writing) {
+            writing = true
+                ;[_x, _y, c, l] = drawChars(
+                    [...text],
+                    x,
                     y,
                     textColor,
                     cursorColor,
                     highlighColor,
                     cursor
                 )
-            )
-            return [x + DEFAULT_CHAR_WIDTH, y, currentColumn, currentLine]
-        }
-
-        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-        const _writeText = (
-            text,
-            x,
-            y,
-            textColor = '#0a0',
-            cursorColor = '#fff',
-            highlighColor = '#0f0',
-            cursor = true
-        ) => {
-            let [_x, _y, c, l] = []
-            if (!writing) {
-                writing = true
-                    ;[_x, _y, c, l] = drawChars(
-                        [...text],
-                        x,
-                        y,
-                        textColor,
-                        cursorColor,
-                        highlighColor,
-                        cursor
-                    )
-            } else {
-                requestAnimationFrame(() => {
-                    ;[_x, _y, c, l] = _writeText(
-                        text,
-                        x,
-                        y,
-                        textColor,
-                        cursorColor,
-                        highlighColor,
-                        cursor
-                    )
-                })
-            }
-            return [_x, _y, currentColumn, currentLine]
-        }
-
-        const writeln = (
-            text,
-            textColor = '#0a0',
-            cursorColor = '#fff',
-            highlighColor = '#0f0',
-            cursor = true
-        ) => {
-            currentColumn = 1
-            currentLine++
-            return write(text, textColor, cursorColor, highlighColor, cursor)
-        }
-
-        const writeKeepPos = (
-            text,
-            textColor = '#0a0',
-            cursorColor = '#fff',
-            highlighColor = '#0f0',
-            cursor = true
-        ) => {
-            return _writeText(
-                text,
-                currentColumn * DEFAULT_CHAR_WIDTH,
-                currentLine * DEFAULT_CHAR_HEIGHT,
-                textColor,
-                cursorColor,
-                highlighColor,
-                cursor
-            )
-        }
-
-        const write = (
-            text,
-            textColor = '#0a0',
-            cursorColor = '#fff',
-            highlighColor = '#0f0',
-            cursor = true
-        ) => {
-            const [x, y, c, l] = _writeText(
-                text,
-                currentColumn * DEFAULT_CHAR_WIDTH,
-                currentLine * DEFAULT_CHAR_HEIGHT,
-                textColor,
-                cursorColor,
-                highlighColor,
-                cursor
-            )
-            currentColumn += text.length + 1
-            return [x, y, currentColumn, currentLine]
-        }
-
-        const writeParcel = (
-            text,
-            textColor = '#0a0',
-            cursorColor = '#fff',
-            highlighColor = '#0f0',
-            cursor = true
-        ) => {
-            const [x, y, c, l] = drawChars(
-                [...text],
-                currentColumn * DEFAULT_CHAR_WIDTH,
-                currentLine * DEFAULT_CHAR_HEIGHT,
-                textColor,
-                cursorColor,
-                highlighColor,
-                cursor
-            )
-            currentColumn += text.length + 1
-            return [x, y, currentColumn, currentLine]
-        }
-
-        const writelnParcel = (
-            text,
-            textColor = '#0a0',
-            cursorColor = '#fff',
-            highlighColor = '#0f0',
-            cursor = true
-        ) => {
-            const [x, y, c, l] = drawChars(
-                [...text],
-                currentColumn * DEFAULT_CHAR_WIDTH,
-                currentLine * DEFAULT_CHAR_HEIGHT,
-                textColor,
-                cursorColor,
-                highlighColor,
-                cursor
-            )
-            currentColumn = 1
-            currentLine++
-            return [x, y, currentColumn, currentLine]
-        }
-
-        const printHello = () => {
-            welcomeTitle.split('\n').forEach((e, i) => {
-                // const fillChar = (1 === i || 10 === i ? '=' : ' ').repeat(charNeedFill)
-                const centerOffsetTimes = Math.floor(
-                    (innerWidth / DEFAULT_CHAR_WIDTH - WELCOMETITLE_LINE_CHARS) / 2
+        } else {
+            requestAnimationFrame(() => {
+                ;[_x, _y, c, l] = _writeText(
+                    text,
+                    x,
+                    y,
+                    textColor,
+                    cursorColor,
+                    highlighColor,
+                    cursor
                 )
-                let lineStr = i > 2 && i < 10 ? ' '.repeat(centerOffsetTimes) + e : e
-                lineStr = 9 === i ? lineStr + 'Ver ' + VERSION : lineStr
-                writelnParcel(lineStr, '#0a0', '#fff', '#abc', false)
             })
         }
+        return [_x, _y, currentColumn, currentLine]
+    }
 
-        const httpGet = (url) => fetch(url).then((res) => res.json())
+    const writeln = (
+        text,
+        textColor = '#0a0',
+        cursorColor = '#fff',
+        highlighColor = '#0f0',
+        cursor = true
+    ) => {
+        currentColumn = 1
+        currentLine++
+        return write(text, textColor, cursorColor, highlighColor, cursor)
+    }
 
-        const writeDots = () => {
-            write('-')
-            requestAnimationFrame(writeDots)
-        }
+    const writeKeepPos = (
+        text,
+        textColor = '#0a0',
+        cursorColor = '#fff',
+        highlighColor = '#0f0',
+        cursor = true
+    ) => {
+        return _writeText(
+            text,
+            currentColumn * DEFAULT_CHAR_WIDTH,
+            currentLine * DEFAULT_CHAR_HEIGHT,
+            textColor,
+            cursorColor,
+            highlighColor,
+            cursor
+        )
+    }
 
-        const getIP = () => httpGet('https://geo.risk3sixty.com/me')
+    const write = (
+        text,
+        textColor = '#0a0',
+        cursorColor = '#fff',
+        highlighColor = '#0f0',
+        cursor = true
+    ) => {
+        const [x, y, c, l] = _writeText(
+            text,
+            currentColumn * DEFAULT_CHAR_WIDTH,
+            currentLine * DEFAULT_CHAR_HEIGHT,
+            textColor,
+            cursorColor,
+            highlighColor,
+            cursor
+        )
+        currentColumn += text.length + 1
+        return [x, y, currentColumn, currentLine]
+    }
 
-        const getMirrorLatency = (url) => {
-            return fetch(url, { mode: 'no-cors', cache: 'reload' })
-        }
+    const writeParcel = (
+        text,
+        textColor = '#0a0',
+        cursorColor = '#fff',
+        highlighColor = '#0f0',
+        cursor = true
+    ) => {
+        const [x, y, c, l] = drawChars(
+            [...text],
+            currentColumn * DEFAULT_CHAR_WIDTH,
+            currentLine * DEFAULT_CHAR_HEIGHT,
+            textColor,
+            cursorColor,
+            highlighColor,
+            cursor
+        )
+        currentColumn += text.length + 1
+        return [x, y, currentColumn, currentLine]
+    }
 
-        //get longest string in array
-        const getLongestString = (arr) =>
-            arr.reduce((a, b) => (a.length > b.length ? a : b))
+    const writelnParcel = (
+        text,
+        textColor = '#0a0',
+        cursorColor = '#fff',
+        highlighColor = '#0f0',
+        cursor = true
+    ) => {
+        const [x, y, c, l] = drawChars(
+            [...text],
+            currentColumn * DEFAULT_CHAR_WIDTH,
+            currentLine * DEFAULT_CHAR_HEIGHT,
+            textColor,
+            cursorColor,
+            highlighColor,
+            cursor
+        )
+        currentColumn = 1
+        currentLine++
+        return [x, y, currentColumn, currentLine]
+    }
 
-        const main = () => {
-            CTX.font = '.9687499701rem cursive'
-            CTX.fillStyle = '#0f0'
+    const printHello = () => {
+        welcomeTitle.split('\n').forEach((e, i) => {
+            const centerOffsetTimes = Math.floor(
+                (innerWidth / DEFAULT_CHAR_WIDTH - WELCOMETITLE_LINE_CHARS) / 2
+            )
+            let lineStr = i === 1 || i === 10 ? '='.repeat(centerOffsetTimes) + e + '='.repeat(centerOffsetTimes - 4) : ' '.repeat(centerOffsetTimes) + e
+            lineStr = 9 === i ? lineStr + 'Ver ' + VERSION : lineStr
+            writelnParcel(lineStr, '#0a0', '#fff', '#abc', false)
+        })
+    }
 
-            printHello()
-            writeParcel('Local time :')
-            writelnParcel(
-                `${new Intl.DateTimeFormat('en-US', {
-                    dateStyle: 'full',
-                    timeStyle: 'long',
-                }).format(new Date())}`,
+    const httpGet = (url) => fetch(url).then((res) => res.json())
+
+    const writeDots = () => {
+        write('-')
+        requestAnimationFrame(writeDots)
+    }
+
+    const getIP = () => httpGet('https://geo.risk3sixty.com/me')
+
+    const getMirrorLatency = (url) => {
+        return fetch(url, { mode: 'no-cors', cache: 'reload' })
+    }
+
+    //get longest string in array
+    const getLongestString = (arr) =>
+        arr.reduce((a, b) => (a.length > b.length ? a : b))
+
+    const main = () => {
+        CTX.font = '.9687499701rem cursive'
+        CTX.fillStyle = '#0f0'
+
+        printHello()
+        writeParcel('Local time :')
+        writelnParcel(
+            `${new Intl.DateTimeFormat('en-US', {
+                dateStyle: 'full',
+                timeStyle: 'long',
+            }).format(new Date())}`,
+            '#fff',
+            '#0f0',
+            '#00f',
+            true
+        )
+        const [x, y, c, l] = writeParcel('IP addr :')
+        currentColumn = 1
+        currentLine++
+
+        getIP().then((ipData) => {
+            const ipStr = `${ipData.ip} / ${ipData.country}${'' === ipData.region ? '' : ' / ' + ipData.region + ' / '
+                }${'' === ipData.city ? '' : ipData.city}`
+            _writeText(
+                ipStr,
+                Math.floor(DEFAULT_CHAR_WIDTH * c),
+                y,
                 '#fff',
                 '#0f0',
                 '#00f',
                 true
             )
-            const [x, y, c, l] = writeParcel('IP addr :')
-            currentColumn = 1
-            currentLine++
+        })
 
-            getIP().then((ipData) => {
-                const ipStr = `${ipData.ip} / ${ipData.country}${'' === ipData.region ? '' : ' / ' + ipData.region + ' / '
-                    }${'' === ipData.city ? '' : ipData.city}`
-                _writeText(
-                    ipStr,
-                    Math.floor(DEFAULT_CHAR_WIDTH * c),
-                    y,
-                    '#fff',
+        listFetch(getLongestString(Object.keys(MIRROR_LIST)).length)
+
+        // writeParcel(await getGeo(ip), '#fff', '#0f0', '#00f', true)
+    }
+
+    const listFetch = (longestLength) => {
+        for (const m of Object.entries(MIRROR_LIST)) {
+            console.log(m)
+            const t = new Date()
+            getMirrorLatency(m[1]).then((_) => {
+                const timeEscaped = new Date() - t
+                const flagStr = `${' '.repeat(longestLength - m[0].length)}${m[0]
+                    } :`
+                const [x, y, c, l] = writelnParcel(
+                    `${flagStr} ${timeEscaped}ms${' '.repeat(
+                        5 - timeEscaped.toString().length
+                    )}`,
+                    '#0a0',
                     '#0f0',
-                    '#00f',
+                    '#fff',
                     true
                 )
-            })
-
-            listFetch(getLongestString(Object.keys(MIRROR_LIST)).length)
-
-            // writeParcel(await getGeo(ip), '#fff', '#0f0', '#00f', true)
-        }
-
-        const listFetch = (longestLength) => {
-            for (const m of Object.entries(MIRROR_LIST)) {
-                console.log(m)
-                const t = new Date()
-                getMirrorLatency(m[1]).then((_) => {
-                    const timeEscaped = new Date() - t
-                    const flagStr = `${' '.repeat(longestLength - m[0].length)}${m[0]
-                        } :`
-                    const [x, y, c, l] = writelnParcel(
-                        `${flagStr} ${timeEscaped}ms${' '.repeat(
-                            5 - timeEscaped.toString().length
-                        )}`,
-                        '#0a0',
-                        '#0f0',
-                        '#fff',
-                        true
-                    )
-                    console.log([x, y, c, l])
-                    Array.from(Array(CONTINUOUS_PING_TIMES)).forEach((_, i) => {
-                        setTimeout(() => {
-                            const usedSpace = (flagStr.length + 12) * DEFAULT_CHAR_WIDTH
-                            const leftSpace = innerWidth - usedSpace
-                            const blankBlock = leftSpace / CONTINUOUS_PING_TIMES
-                            const t = new Date()
-                            getMirrorLatency(m[1]).then((_) => {
-                                const timeoutDelayStr = `${new Date() - t}ms`
-                                _writeText(
-                                    timeoutDelayStr,
-                                    Math.floor(
-                                        usedSpace +
-                                        blankBlock * i +
-                                        blankBlock -
-                                        12 * DEFAULT_CHAR_WIDTH
-                                    ),
-                                    y,
-                                    '#0a0',
-                                    '#0f0',
-                                    '#fff',
-                                    true
-                                )
-                            })
-                        }, i * 1000)
-                    })
+                console.log([x, y, c, l])
+                Array.from(Array(CONTINUOUS_PING_TIMES)).forEach((_, i) => {
+                    setTimeout(() => {
+                        const usedSpace = (flagStr.length + 12) * DEFAULT_CHAR_WIDTH
+                        const leftSpace = innerWidth - usedSpace
+                        const blankBlock = leftSpace / CONTINUOUS_PING_TIMES
+                        const t = new Date()
+                        getMirrorLatency(m[1]).then((_) => {
+                            const timeoutDelayStr = `${new Date() - t}ms`
+                            _writeText(
+                                timeoutDelayStr,
+                                Math.floor(
+                                    usedSpace +
+                                    blankBlock * i +
+                                    blankBlock -
+                                    12 * DEFAULT_CHAR_WIDTH
+                                ),
+                                y,
+                                '#0a0',
+                                '#0f0',
+                                '#fff',
+                                true
+                            )
+                        })
+                    }, i * 1000)
                 })
-            }
+            })
         }
+    }
 
-        main()
-    </script>
+    main()
+</script>

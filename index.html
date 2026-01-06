@@ -498,41 +498,38 @@
     }
 
     const latencyCache = new Map()
+
     const getMirrorLatency = async (url) => {
+        const urlObj = new URL(url)
+        const address = `${urlObj.hostname}:${urlObj.port}`
+
+        // 根据当前页面协议选择 HTTP 或 HTTPS
+        const protocol = location.protocol === 'https:' ? 'https:' : 'http:'
+        const fetchUrl = `${protocol}//${address}`
+
+        const controller = new AbortController()
+        const startTime = performance.now()
+
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
+
         try {
-            const urlObj = new URL(url)
-            const host = urlObj.hostname
-            const port = urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80)
-
-            // 根据当前页面协议选择 WebSocket 协议
-            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-
-            const t = performance.now()
-            await new Promise((resolve, reject) => {
-                const socket = new WebSocket(`${wsProtocol}//${host}:${port}`)
-                socket.onopen = () => {
-                    socket.close()
-                    resolve()
-                }
-                socket.onerror = () => {
-                    socket.close()
-                    resolve()
-                }
-                socket.onclose = () => {
-                    resolve()
-                }
-
-                setTimeout(() => {
-                    try {
-                        socket.close()
-                    } catch (e) {}
-                    resolve()
-                }, 5000)
+            console.log(`Fetching: ${fetchUrl}`)
+            await fetch(fetchUrl, {
+                mode: 'no-cors',
+                signal: controller.signal
             })
-            return Math.round(performance.now() - t)
+            clearTimeout(timeoutId)
+            const duration = Math.round(performance.now() - startTime)
+            console.log(`Success: ${fetchUrl} -> ${duration}ms`)
+            return duration
         } catch (err) {
-            console.error('Ping error:', err)
-            return 9999
+            clearTimeout(timeoutId)
+            const duration = Math.round(performance.now() - startTime)
+            console.error(`Error: ${fetchUrl} -> ${duration}ms`, err)
+            if (err.name === 'AbortError') {
+                return 5000
+            }
+            return duration
         }
     }
 
@@ -594,6 +591,9 @@
     const listFetch = (longestLength) => {
         const mirrorEntries = Object.entries(MIRROR_LIST)
 
+        // 记录起始行号
+        const startLine = currentLine
+
         // 先预分配所有行
         mirrorEntries.forEach((m) => {
             const mirrorName = m[0]
@@ -615,7 +615,7 @@
             for (let i = 0; i < CONTINUOUS_PING_TIMES; i++) {
                 const px = (usedSpace + blankBlock * i + blankBlock - 12 * DEFAULT_CHAR_WIDTH) | 0
                 CTX.fillStyle = '#333'
-                CTX.fillText('--', px + 24, initialY + TEXT_BASELINE_OFFSET)
+                CTX.fillText('--', px, initialY + TEXT_BASELINE_OFFSET)
             }
 
             currentColumn = 1
@@ -628,12 +628,12 @@
             const mirrorUrl = m[1]
             const flagStr = `${' '.repeat(longestLength - mirrorName.length)}${mirrorName}:`
 
-            const startY = (index + currentLine - mirrorEntries.length + 1) * DEFAULT_CHAR_HEIGHT
+            const startY = (startLine + index) * DEFAULT_CHAR_HEIGHT
             const usedSpace = (flagStr.length + 12) * DEFAULT_CHAR_WIDTH
             const leftSpace = innerWidth - usedSpace
             const blankBlock = leftSpace / CONTINUOUS_PING_TIMES
 
-            // 第一次延迟
+            // 立即执行第一次延迟（对应第一个位置）
             getMirrorLatency(mirrorUrl).then((timeEscaped) => {
                 const latencyColor = getLatencyColor(timeEscaped)
                 const px = (usedSpace + blankBlock - 12 * DEFAULT_CHAR_WIDTH) | 0
@@ -641,6 +641,9 @@
                 CTX.clearRect(px, startY, 8 * DEFAULT_CHAR_WIDTH, DEFAULT_CHAR_HEIGHT)
                 CTX.fillStyle = latencyColor
                 CTX.fillText(`${timeEscaped}ms`, px, startY + TEXT_BASELINE_OFFSET)
+                console.log(`First ping result for ${mirrorName}: ${timeEscaped}ms`)
+            }).catch((err) => {
+                console.error('First ping error:', err, 'URL:', mirrorUrl)
             })
 
             // 连续6次延迟

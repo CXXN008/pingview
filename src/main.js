@@ -77,7 +77,7 @@ const DOMAIN_CATEGORIES = {
         'henesys-rpc.cdn.cloudflare.net': 'https://henesys-rpc.msu.io.cdn.cloudflare.net',
         'msn.dn.nexoncdn.co.kr': 'https://msn.dn.nexoncdn.co.kr',
         'config.livelog.nexon.com': 'https://config.livelog.nexon.com',
-        'jp.livelog.nexon.com': 'https://jp.livelog.nexon.com',
+        'jp.livelog.nexon.com(与游戏服务器机房相同、大概)': 'https://jp.livelog.nexon.com',
         'psm-log.ngs.nexon.com': 'https://psm-log.ngs.nexon.com',
         'jyp.nexon.com': 'https://jyp.nexon.com',
     },
@@ -150,9 +150,9 @@ let frameRendered = 0
 const callFn = (fn) => fn()
 
 const getLatencyColor = (ms) => {
-    if (ms >= 100) return '#f00'
-    if (ms >= 50) return '#ff0'
-    return '#fa0'  // 橙色替代绿色
+    if (ms >= 150) return '#f00'
+    if (ms >= 100) return '#ff0'
+    return '#0f0'  // 橙色替代绿色
 }
 
 const MATRIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?'

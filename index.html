@@ -504,9 +504,12 @@
             const host = urlObj.hostname
             const port = urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80)
 
+            // 根据当前页面协议选择 WebSocket 协议
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+
             const t = performance.now()
             await new Promise((resolve, reject) => {
-                const socket = new WebSocket(`ws://${host}:${port}`)
+                const socket = new WebSocket(`${wsProtocol}//${host}:${port}`)
                 socket.onopen = () => {
                     socket.close()
                     resolve()

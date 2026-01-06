@@ -97,19 +97,19 @@
 
     const welcomeTitle = ` 
 ============================================================
-          █                           █                 
-   ██                        █████░                     
-   ██                        █   ▓█                     
-  ▒██▒  ███    █▒██▒         █    █ ███    █▒██▒   ██▓█ 
-  ▓▒▒▓    █    █▓ ▒█         █   ▓█   █    █▓ ▒█  █▓ ▓█ 
-  █░░█    █    █   █         █████░   █    █   █  █   █ 
-  █  █    █    █   █         █        █    █   █  █   █ 
- ▒████▒   █    █   █         █        █    █   █  █   █ 
- ▓▒  ▒▓   █    █   █         █        █    █   █  █▓ ▓█ 
- █░  ░█ █████  █   █         █      █████  █   █   ██▒█ 
-                                                      █ 
-                                                   ▓ ▒█ 
-                                                   ▒██░ 
+
+
+
+
+███╗   ███╗███████╗██╗   ██╗    ██████╗ ██╗███╗   ██╗ ██████╗ 
+████╗ ████║██╔════╝██║   ██║    ██╔══██╗██║████╗  ██║██╔════╝ 
+██╔████╔██║███████╗██║   ██║    ██████╔╝██║██╔██╗ ██║██║  ███╗
+██║╚██╔╝██║╚════██║██║   ██║    ██╔═══╝ ██║██║╚██╗██║██║   ██║
+██║ ╚═╝ ██║███████║╚██████╔╝    ██║     ██║██║ ╚████║╚██████╔╝
+╚═╝     ╚═╝╚══════╝ ╚═════╝     ╚═╝     ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+                                                        
+
+
 ============================================================
  `
     const WELCOMETITLE_LINE_CHARS = 60
@@ -229,12 +229,35 @@
     const getLatencyColor = (ms) => {
         if (ms >= 100) return '#f00'
         if (ms >= 50) return '#ff0'
-        return '#0f0'
+        return '#fa0'  // 橙色替代绿色
     }
 
     const MATRIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?'
     const COLUMN_DROPS = []
     const FONT_SIZE = 14
+    let matrixCharPool = []
+    let matrixActive = false
+    let activeRequestCount = 0
+
+    const startMatrixIfNeeded = () => {
+        if (!matrixActive && (matrixCharPool.length > 0 || activeRequestCount > 0)) {
+            matrixActive = true
+            initMatrix()
+            animateMatrix()
+        }
+    }
+
+    const addToMatrixPool = (data) => {
+        let text
+        if (typeof data === 'string') {
+            text = data
+        } else {
+            text = JSON.stringify(data)
+        }
+        const chars = text.split('').filter(char => char.trim() !== '')
+        matrixCharPool.push(...chars)
+        startMatrixIfNeeded()
+    }
 
     const initMatrix = () => {
         const columns = Math.floor(MATRIX_CANVAS.width / FONT_SIZE)
@@ -248,32 +271,52 @@
         MATRIX_CTX.fillStyle = 'rgba(0, 0, 0, 0.05)'
         MATRIX_CTX.fillRect(0, 0, MATRIX_CANVAS.width, MATRIX_CANVAS.height)
 
-        MATRIX_CTX.fillStyle = '#00f'
+        // 如果没有字符且没有活跃请求，停止动画
+        if (matrixCharPool.length === 0 && activeRequestCount === 0) {
+            matrixActive = false
+            return
+        }
+
+        MATRIX_CTX.fillStyle = '#0f0'
         MATRIX_CTX.font = `${FONT_SIZE}px monospace`
 
+        // 计算速度因子：基础速度1，每个活跃请求增加0.5
+        const speedFactor = 1 + (activeRequestCount * 0.5)
+
         for (let i = 0; i < COLUMN_DROPS.length; i++) {
-            const text = MATRIX_CHARS.charAt(Math.floor(Math.random() * MATRIX_CHARS.length))
+            // 如果池子为空，跳过绘制（但仍需更新位置？）
+            if (matrixCharPool.length === 0) {
+                // 池子为空但仍有活跃请求，继续动画但不绘制字符
+                continue
+            }
+
+            // 从池中随机选取一个字符
+            const randomIndex = Math.floor(Math.random() * matrixCharPool.length)
+            const text = matrixCharPool[randomIndex]
             const x = i * FONT_SIZE
             const y = COLUMN_DROPS[i] * FONT_SIZE
 
-            MATRIX_CTX.fillStyle = `rgba(0, ${50 + Math.random() * 50}, ${150 + Math.random() * 105}, ${0.3 + Math.random() * 0.7})`
+            // 绿色系配色
+            MATRIX_CTX.fillStyle = `rgba(0, ${150 + Math.random() * 105}, 0, ${0.3 + Math.random() * 0.7})`
             MATRIX_CTX.fillText(text, x, y)
 
             if (y > MATRIX_CANVAS.height && Math.random() > 0.975) {
                 COLUMN_DROPS[i] = 0
+                // 移除已使用的字符
+                matrixCharPool.splice(randomIndex, 1)
             }
 
-            COLUMN_DROPS[i]++
+            COLUMN_DROPS[i] += speedFactor
         }
     }
 
     const animateMatrix = () => {
+        if (!matrixActive) return
         drawMatrix()
         requestAnimationFrame(animateMatrix)
     }
 
-    initMatrix()
-    animateMatrix()
+
 
     const SCRAMBLE_CHARS = '!@#$%^&*()_+-=[]{}|;:,.<>?/~`'
 
@@ -387,9 +430,9 @@
         text,
         x,
         y,
-        textColor = '#0a0',
+        textColor = '#fa0',
         cursorColor = '#fff',
-        highlighColor = '#0f0',
+        highlighColor = '#ff0',
         cursor = true,
         useEncryptEffect = false
     ) => {
@@ -453,9 +496,9 @@
 
     const writeln = (
         text,
-        textColor = '#0a0',
+        textColor = '#fa0',
         cursorColor = '#fff',
-        highlighColor = '#0f0',
+        highlighColor = '#ff0',
         cursor = true
     ) => {
         currentColumn = 1
@@ -465,9 +508,9 @@
 
     const writeKeepPos = (
         text,
-        textColor = '#0a0',
+        textColor = '#fa0',
         cursorColor = '#fff',
-        highlighColor = '#0f0',
+        highlighColor = '#ff0',
         cursor = true
     ) => {
         return _writeText(
@@ -483,9 +526,9 @@
 
     const write = (
         text,
-        textColor = '#0a0',
+        textColor = '#fa0',
         cursorColor = '#fff',
-        highlighColor = '#0f0',
+        highlighColor = '#ff0',
         cursor = true
     ) => {
         const [x, y, c, l] = _writeText(
@@ -503,9 +546,9 @@
 
     const writeParcel = (
         text,
-        textColor = '#0a0',
+        textColor = '#fa0',
         cursorColor = '#fff',
-        highlighColor = '#0f0',
+        highlighColor = '#ff0',
         cursor = true
     ) => {
         const x = currentColumn * DEFAULT_CHAR_WIDTH
@@ -526,9 +569,9 @@
 
     const writelnParcel = (
         text,
-        textColor = '#0a0',
+        textColor = '#fa0',
         cursorColor = '#fff',
-        highlighColor = '#0f0',
+        highlighColor = '#ff0',
         cursor = true
     ) => {
         const x = currentColumn * DEFAULT_CHAR_WIDTH
@@ -566,7 +609,7 @@
             } else {
                 lineStr = ' '.repeat(paddingChars) + e
             }
-            writelnParcel(lineStr, '#0a0', '#fff', '#abc', false)
+            writelnParcel(lineStr, '#fa0', '#fff', '#fba', false)
         })
     }
 
@@ -598,10 +641,13 @@
             return dnsCache.get(domain)
         }
 
+        activeRequestCount++
+        startMatrixIfNeeded()
         try {
             const response = await fetch(`https://dns.alidns.com/resolve?name=${domain}&type=1`)
             const data = await response.json()
-
+            addToMatrixPool(data)
+            
             if (data.Answer && data.Answer.length > 0) {
                 const ips = data.Answer
                     .filter(a => a.type === 1) // 只取 A 记录
@@ -613,6 +659,8 @@
         } catch (e) {
             console.error('DNS resolution error:', e)
             return []
+        } finally {
+            activeRequestCount--
         }
     }
 
@@ -622,14 +670,19 @@
             return ipLocationCache.get(ip)
         }
 
+        activeRequestCount++
+        startMatrixIfNeeded()
         try {
             const response = await fetch(`https://geo.risk3sixty.com/${ip}`)
             const data = await response.json()
+            addToMatrixPool(data)
             ipLocationCache.set(ip, data)
             return data
         } catch (e) {
             console.error('IP location error:', e)
             return null
+        } finally {
+            activeRequestCount--
         }
     }
 
@@ -664,7 +717,7 @@
 
     const main = () => {
         CTX.font = '1rem cursive'
-        CTX.fillStyle = '#0f0'
+        CTX.fillStyle = '#fa0'
         DEFAULT_CHAR_WIDTH = CTX.measureText('M').width
 
         printHello()
@@ -675,8 +728,8 @@
                 timeStyle: 'long',
             }).format(new Date())}`,
             '#fff',
-            '#0f0',
-            '#00f',
+            '#fa0',
+            '#f80',
             false
         )
         const [x, y, c, l] = writeParcel(' IP addr :')
@@ -691,8 +744,8 @@
                 (DEFAULT_CHAR_WIDTH * c) | 0,
                 y | 0,
                 '#fff',
-                '#0f0',
-                '#00f',
+                '#fa0',
+                '#f80',
                 false,
                 true
             )
@@ -717,9 +770,10 @@
         Object.values(DOMAIN_CATEGORIES).forEach(domains => {
             totalDomainCount += Object.keys(domains).length
         })
-        // 标题 19 行 + 时间信息 2 行 + 3个分类（每个分类标题 2 行 + 域名数×1行）+ 额外间距
-        const totalLines = 19 + 2 + (3 * 2) + totalDomainCount * 1 + 5
-        const totalHeight = totalLines * DEFAULT_CHAR_HEIGHT + 100
+        // 双列布局：标题 19 行 + 时间信息 2 行 + 3个分类（每个分类标题 1 行 + 域名数×0.5行）+ 额外间距
+        const totalLines = 19 + 2 + (3 * 1) + Math.ceil(totalDomainCount / 2) + 2
+        // 确保高度不超过963px
+        const totalHeight = Math.min(totalLines * DEFAULT_CHAR_HEIGHT + 60, 963)
 
         const windowWidth = window.innerWidth
         MATRIX_CANVAS.width = windowWidth
@@ -734,37 +788,43 @@
         const oldMirrorEntries = Object.entries(OLD_MIRRORS)
         const categories = Object.entries(DOMAIN_CATEGORIES)
 
-        // 先显示3个分类的域名
+        // 先显示3个分类的域名 - 双列布局
         categories.forEach(([categoryName, domains]) => {
             currentLine++
-            currentLine++
-            writelnParcel(`=== ${categoryName} ===`, '#0ff', '#fff', '#fff', false)
-            currentLine++
+            writelnParcel(`=== ${categoryName} ===`, '#ff0', '#fff', '#fff', false)
 
             const domainEntries = Object.entries(domains)
             const categoryLongestLength = getLongestString(Object.keys(domains)).length
             const startLine = currentLine
 
-            // 先预分配所有行（每个域名 1 行，紧凑显示）
-            domainEntries.forEach((m) => {
+            // 双列布局：每个域名占0.5行（2个域名/行）
+            domainEntries.forEach((m, domainIndex) => {
                 const mirrorName = m[0]
                 const mirrorUrl = m[1]
                 const urlObj = new URL(mirrorUrl)
                 const domain = urlObj.hostname
+
+                // 计算列（左列或右列）
+                const isLeftColumn = domainIndex % 2 === 0
+                const lineOffset = Math.floor(domainIndex / 2)
+
                 const flagStr = `${' '.repeat(categoryLongestLength - mirrorName.length)}${mirrorName}:`
 
-                // 单行显示：域名 + 延迟 + IP信息（json格式）
-                const x = currentColumn * DEFAULT_CHAR_WIDTH
-                const y = currentLine * DEFAULT_CHAR_HEIGHT
+                // 双列布局：左列从左边距开始，右列从中间开始
+                const windowWidth = window.innerWidth
+                const leftColumnX = currentColumn * DEFAULT_CHAR_WIDTH
+                const rightColumnX = windowWidth / 2 + currentColumn * DEFAULT_CHAR_WIDTH
+                const x = isLeftColumn ? leftColumnX : rightColumnX
+                const y = (startLine + lineOffset) * DEFAULT_CHAR_HEIGHT
 
-                CTX.fillStyle = '#0f0'
+                CTX.fillStyle = '#fa0'
                 CTX.fillText(flagStr, x, y + TEXT_BASELINE_OFFSET)
 
-                // 计算延迟显示位置（右侧）
-                const windowWidth = window.innerWidth
+                // 计算延迟显示位置
                 const latencyDisplayWidth = CONTINUOUS_PING_TIMES * 40 + 20
-                const usedSpace = (flagStr.length + 2) * DEFAULT_CHAR_WIDTH
-                const latencyStartX = windowWidth - latencyDisplayWidth
+                const leftLatencyStartX = windowWidth / 2 - latencyDisplayWidth - 20
+                const rightLatencyStartX = windowWidth - latencyDisplayWidth
+                const latencyStartX = isLeftColumn ? leftLatencyStartX : rightLatencyStartX
 
                 // 预填充占位符
                 for (let i = 0; i < CONTINUOUS_PING_TIMES; i++) {
@@ -773,30 +833,42 @@
                     CTX.fillText('--', px, y + TEXT_BASELINE_OFFSET)
                 }
 
-                // 显示IP占位符（json格式）
-                const ipStartX = usedSpace
+                // 显示IP占位符（json格式，紧凑）
+                const usedSpace = (flagStr.length + 2) * DEFAULT_CHAR_WIDTH
+                const ipStartX = x + usedSpace
                 CTX.fillStyle = '#666'
-                CTX.fillText(`{"ip":"...",}`, ipStartX, y + TEXT_BASELINE_OFFSET)
-
-                currentColumn = 1
-                currentLine++
+                // 更紧凑的json格式：ip和location在同一行，省略引号
+                CTX.fillText(`{ip:..., loc:...}`, ipStartX, y + TEXT_BASELINE_OFFSET)
             })
 
+            // 更新行号
+            currentLine = startLine + Math.ceil(domainEntries.length / 2)
+
             // 然后异步获取数据并更新
-            domainEntries.forEach((m, index) => {
+            domainEntries.forEach((m, domainIndex) => {
                 const mirrorName = m[0]
                 const mirrorUrl = m[1]
                 const urlObj = new URL(mirrorUrl)
                 const domain = urlObj.hostname
+
+                const isLeftColumn = domainIndex % 2 === 0
+                const lineOffset = Math.floor(domainIndex / 2)
+
                 const flagStr = `${' '.repeat(categoryLongestLength - mirrorName.length)}${mirrorName}:`
 
-                const y = (startLine + index) * DEFAULT_CHAR_HEIGHT
-                const x = currentColumn * DEFAULT_CHAR_WIDTH
+                const y = (startLine + lineOffset) * DEFAULT_CHAR_HEIGHT
                 const windowWidth = window.innerWidth
-                const usedSpace = (flagStr.length + 2) * DEFAULT_CHAR_WIDTH
+                const leftColumnX = currentColumn * DEFAULT_CHAR_WIDTH
+                const rightColumnX = windowWidth / 2 + currentColumn * DEFAULT_CHAR_WIDTH
+                const x = isLeftColumn ? leftColumnX : rightColumnX
+
                 const latencyDisplayWidth = CONTINUOUS_PING_TIMES * 40 + 20
-                const latencyStartX = windowWidth - latencyDisplayWidth
-                const ipStartX = usedSpace
+                const leftLatencyStartX = windowWidth / 2 - latencyDisplayWidth - 20
+                const rightLatencyStartX = windowWidth - latencyDisplayWidth
+                const latencyStartX = isLeftColumn ? leftLatencyStartX : rightLatencyStartX
+
+                const usedSpace = (flagStr.length + 2) * DEFAULT_CHAR_WIDTH
+                const ipStartX = x + usedSpace
 
                 // 解析 DNS
                 resolveDNS(domain).then(ips => {
@@ -804,14 +876,17 @@
                         // 获取第一个 IP 的位置
                         getIPLocation(ips[0]).then(location => {
                             if (location) {
-                                // 清除并显示IP信息（紧凑的json格式，高亮location）
+                                // 清除并显示IP信息（紧凑格式，高亮location）
                                 CTX.clearRect(ipStartX, y, latencyStartX - ipStartX - 10, DEFAULT_CHAR_HEIGHT)
+                                const locationText = `${location.country}/${location.region}/${location.city}`
+                                // 超紧凑格式：{ip:xxx.xxx.xxx.xxx, loc:国家/地区/城市}
+                                const infoText = `{ip:${ips[0]}, loc:`
                                 CTX.fillStyle = '#888'
-                                CTX.fillText(`{"ip":"${ips[0]}","location":"`, ipStartX, y + TEXT_BASELINE_OFFSET)
+                                CTX.fillText(infoText, ipStartX, y + TEXT_BASELINE_OFFSET)
                                 CTX.fillStyle = '#88f'
-                                CTX.fillText(`${location.country}/${location.region}/${location.city}`, ipStartX + CTX.measureText(`{"ip":"${ips[0]}","location":"`).width, y + TEXT_BASELINE_OFFSET)
+                                CTX.fillText(locationText, ipStartX + CTX.measureText(infoText).width, y + TEXT_BASELINE_OFFSET)
                                 CTX.fillStyle = '#888'
-                                CTX.fillText(`"}`, ipStartX + CTX.measureText(`{"ip":"${ips[0]}","location":"${location.country}/${location.region}/${location.city}"`).width, y + TEXT_BASELINE_OFFSET)
+                                CTX.fillText('}', ipStartX + CTX.measureText(infoText + locationText).width, y + TEXT_BASELINE_OFFSET)
                             }
                         })
                     }
@@ -1172,8 +1247,9 @@
         Object.values(DOMAIN_CATEGORIES).forEach(domains => {
             totalDomainCount += Object.keys(domains).length
         })
-        const totalLines = 19 + 2 + (3 * 2) + totalDomainCount * 1 + 5
-        const totalHeight = totalLines * DEFAULT_CHAR_HEIGHT + 100
+        // 双列布局计算
+        const totalLines = 19 + 2 + (3 * 1) + Math.ceil(totalDomainCount / 2) + 2
+        const totalHeight = Math.min(totalLines * DEFAULT_CHAR_HEIGHT + 60, 963)
 
         // 更新UI Canvas的位置
         const uiCanvas = document.getElementById('uiCanvas')

@@ -1,69 +1,138 @@
-<style>
-    body {
-        margin: 0;
-        background-color: black;
-        overflow: hidden;
-    }
-</style>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping View</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: black;
+            overflow: hidden;
+        }
 
-<canvas></canvas>
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        #main {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 2;
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            animation: scanlines 0.1s linear infinite;
+        }
+
+        .crt-flicker {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            background: rgba(0, 255, 0, 0.02);
+            animation: flicker 0.15s infinite;
+            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.9);
+        }
+
+        @keyframes scanlines {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(2px); }
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            50% { opacity: 1; }
+            100% { opacity: 0.98; }
+        }
+    </style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="crt-flicker"></div>
+<canvas id="matrix"></canvas>
+<canvas id="main"></canvas>
 <script>
     const URL_PARAMS = new URLSearchParams(location.search)
 
-    const C = document.querySelector('canvas')
-    const CTX = C.getContext('2d')
+    const MATRIX_CANVAS = document.getElementById('matrix')
+    const MATRIX_CTX = MATRIX_CANVAS.getContext('2d')
+    const C = document.getElementById('main')
+    const CTX = C.getContext('2d', { alpha: true })
+
+    MATRIX_CANVAS.width = innerWidth
+    MATRIX_CANVAS.height = innerHeight
     C.width = innerWidth
     C.height = innerHeight
 
-    const DEFAULT_CHAR_WIDTH = CTX.measureText('M').width
+    let DEFAULT_CHAR_WIDTH = CTX.measureText('M').width
     const DEFAULT_CHAR_HEIGHT = 16
+    const TEXT_BASELINE_OFFSET = 13
 
     const welcomeTitle = ` 
 ============================================================
-                                                            
-██╗    ██╗███████╗██████╗     ██████╗ ██╗███╗   ██╗ ██████╗ 
-██║    ██║██╔════╝██╔══██╗    ██╔══██╗██║████╗  ██║██╔════╝ 
-██║ █╗ ██║█████╗  ██████╔╝    ██████╔╝██║██╔██╗ ██║██║  ███╗
-██║███╗██║██╔══╝  ██╔══██╗    ██╔═══╝ ██║██║╚██╗██║██║   ██║
-╚███╔███╔╝███████╗██████╔╝    ██║     ██║██║ ╚████║╚██████╔╝
- ╚══╝╚══╝ ╚══════╝╚═════╝     ╚═╝     ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
-                                                            
+          █                           █                 
+   ██                        █████░                     
+   ██                        █   ▓█                     
+  ▒██▒  ███    █▒██▒         █    █ ███    █▒██▒   ██▓█ 
+  ▓▒▒▓    █    █▓ ▒█         █   ▓█   █    █▓ ▒█  █▓ ▓█ 
+  █░░█    █    █   █         █████░   █    █   █  █   █ 
+  █  █    █    █   █         █        █    █   █  █   █ 
+ ▒████▒   █    █   █         █        █    █   █  █   █ 
+ ▓▒  ▒▓   █    █   █         █        █    █   █  █▓ ▓█ 
+ █░  ░█ █████  █   █         █      █████  █   █   ██▒█ 
+                                                      █ 
+                                                   ▓ ▒█ 
+                                                   ▒██░ 
 ============================================================
  `
     const WELCOMETITLE_LINE_CHARS = 60
-    const DEFAULT_CURSOR_HEIGHT = DEFAULT_CHAR_HEIGHT - 12
     const CONTINUOUS_PING_TIMES = 6
-    const DEFAULT_CURSOR_WIDTH = DEFAULT_CHAR_WIDTH - 4
     const ANIMATION_SPEED = 1
     // const VERSION = require('./package.json').version
     const VERSION = '0.3.1'
     const MIRROR_LIST = {
-        Netease: 'http://mirrors.163.com/ubuntu/errorfileccccc',
-        Sohu: 'https://mirrors.sohu.com/errorfileccccc',
-        Huawei: 'https://repo.huaweicloud.com/ubuntu/errorfileccccc',
-        Ali: 'https://mirrors.aliyun.com/ubuntu/errorfileccccc',
-        Tencent: 'https://mirrors.cloud.tencent.com/errorfileccccc',
-        Douban: 'https://pypi.doubanio.com/errorfileccccc',
-        YunIdc: 'https://mirrors.yun-idc.com/errorfileccccc',
-        Pubyun: 'https://mirrors.pubyun.com/errorfileccccc',
-        Koddos: 'https://mirror-hk.koddos.net/errorfileccccc',
-        Kumi: 'https://mirror.kumi.systems/errorfileccccc',
-        Bitcomm: 'https://centos.bitcomm.cn/errorfileccccc',
-        Skyshe: 'http://mirrors.skyshe.cn/errorfileccccc',
-        Taobaonpm: 'https://registry.npmmirror.com/errorfileccccc',
-        Linuxeye: 'http://mirrors.linuxeye.com/errorfileccccc',
-        SjuE: 'https://mirrors.zju.edu.cn/errorfileccccc',
-        SjtuE: 'https://mirror.sjtu.edu.cn/errorfileccccc',
-        CquE: 'https://mirrors.cqu.edu.cn/errorfileccccc',
-        BfsuE: 'https://mirrors.bfsu.edu.cn/errorfileccccc',
-        TsinghuaE: 'https://mirrors.tuna.tsinghua.edu.cn/errorfileccccc',
-        CquptE: 'https://mirrors.cqupt.edu.cn/errorfileccccc',
-        WsyuE: 'https://mirrors.wsyu.edu.cn/errorfileccccc',
-        NjuE: 'https://mirror.nju.edu.cn/errorfileccccc',
-        ScauE: 'https://mirrors.scau.edu.cn/errorfileccccc',
-        HitE: 'https://mirrors.hit.edu.cn/errorfileccccc',
-        Cnnic: 'https://mirrors.cnnic.cn/errorfileccccc',
-        SdwuE: 'https://mirrors.sdwu.edu.cn/errorfileccccc',
+        'Ain ch.1': 'http://18.176.79.10:8585',
+        'Ain ch.2': 'http://3.112.119.155:8585',
+        'Ain ch.3': 'http://52.197.194.155:8585',
+        'Ain ch.4': 'http://35.79.26.6:8585',
+        'Ain ch.5': 'http://54.64.47.212:8585',
+        'Ain ch.6': 'http://54.64.47.212:8586',
+        'Ain ch.7': 'http://35.75.33.109:8585',
+        'Ain ch.8': 'http://35.75.33.109:8586',
+        'Ain ch.9': 'http://57.181.203.81:8585',
+        'Ain ch.10': 'http://57.181.203.81:8586',
+        'Ain ch.11': 'http://54.65.159.42:8585',
+        'Ain ch.12': 'http://54.65.159.42:8586',
+        'Ain ch.13': 'http://18.177.179.145:8585',
+        'Ain ch.14': 'http://18.177.179.145:8586',
+        'Ain ch.15': 'http://13.115.72.186:8585',
+        'Ain ch.16': 'http://13.115.72.186:8586',
+        'Ain ch.17': 'http://13.114.24.162:8585',
+        'Ain ch.18': 'http://13.114.24.162:8586',
+        'Ain ch.19': 'http://57.182.28.187:8585',
+        'Ain ch.20': 'http://57.182.28.187:8586',
     }
 
     let skipAnimation = false
@@ -76,6 +145,69 @@
 
     const callFn = (fn) => fn()
 
+    const getLatencyColor = (ms) => {
+        if (ms >= 100) return '#f00'
+        if (ms >= 50) return '#ff0'
+        return '#0f0'
+    }
+
+    const MATRIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?'
+    const COLUMN_DROPS = []
+    const FONT_SIZE = 14
+
+    const initMatrix = () => {
+        const columns = Math.floor(MATRIX_CANVAS.width / FONT_SIZE)
+        for (let i = 0; i < columns; i++) {
+            COLUMN_DROPS[i] = Math.random() * -100
+        }
+    }
+
+    const drawMatrix = () => {
+        MATRIX_CTX.fillStyle = 'rgba(0, 0, 0, 0.05)'
+        MATRIX_CTX.fillRect(0, 0, MATRIX_CANVAS.width, MATRIX_CANVAS.height)
+
+        MATRIX_CTX.fillStyle = '#00f'
+        MATRIX_CTX.font = `${FONT_SIZE}px monospace`
+
+        for (let i = 0; i < COLUMN_DROPS.length; i++) {
+            const text = MATRIX_CHARS.charAt(Math.floor(Math.random() * MATRIX_CHARS.length))
+            const x = i * FONT_SIZE
+            const y = COLUMN_DROPS[i] * FONT_SIZE
+
+            MATRIX_CTX.fillStyle = `rgba(0, ${50 + Math.random() * 50}, ${150 + Math.random() * 105}, ${0.3 + Math.random() * 0.7})`
+            MATRIX_CTX.fillText(text, x, y)
+
+            if (y > MATRIX_CANVAS.height && Math.random() > 0.975) {
+                COLUMN_DROPS[i] = 0
+            }
+
+            COLUMN_DROPS[i]++
+        }
+    }
+
+    const animateMatrix = () => {
+        drawMatrix()
+        requestAnimationFrame(animateMatrix)
+    }
+
+    initMatrix()
+    animateMatrix()
+
+    const SCRAMBLE_CHARS = '!@#$%^&*()_+-=[]{}|;:,.<>?/~`'
+
+    const encryptText = (text, progress) => {
+        const scrambleLength = Math.floor((1 - progress) * text.length)
+        const result = []
+        for (let i = 0; i < text.length; i++) {
+            if (i < text.length - scrambleLength) {
+                result.push(text[i])
+            } else {
+                result.push(SCRAMBLE_CHARS.charAt(Math.floor(Math.random() * SCRAMBLE_CHARS.length)))
+            }
+        }
+        return result.join('')
+    }
+
     const drawChars = (
         text,
         x,
@@ -83,47 +215,75 @@
         textColor = '#0a0',
         cursorColor = '#fff',
         highlighColor = '#0f0',
-        cursor = true
+        cursor = true,
+        useGlow = false,
+        isFirstCall = true
     ) => {
-        let [_x, _y, c, l] = []
-        if (cursor) {
-            CTX.fillStyle = cursorColor
-            CTX.fillRect(
-                x + DEFAULT_CHAR_WIDTH * 2,
-                y - DEFAULT_CURSOR_HEIGHT,
-                DEFAULT_CURSOR_WIDTH,
-                DEFAULT_CURSOR_HEIGHT
-            )
+        x = x | 0
+        y = y | 0
+
+        const baselineY = y + TEXT_BASELINE_OFFSET
+        const textX = x | 0
+        const highlightX = (x + DEFAULT_CHAR_WIDTH) | 0
+        const cursorX = highlightX
+
+        if (isFirstCall) {
+            const maxTextLength = 8
+            CTX.clearRect(x, y, maxTextLength * DEFAULT_CHAR_WIDTH, DEFAULT_CHAR_HEIGHT)
+        } else {
             CTX.clearRect(
-                x + DEFAULT_CHAR_WIDTH,
-                y - DEFAULT_CURSOR_HEIGHT,
-                DEFAULT_CURSOR_WIDTH,
-                DEFAULT_CURSOR_HEIGHT
+                textX,
+                y,
+                DEFAULT_CHAR_WIDTH * 3 | 0,
+                DEFAULT_CHAR_HEIGHT | 0
+            )
+        }
+
+        if (cursor) {
+            const cursorIntensity = 0.5 + Math.sin(Date.now() / 100) * 0.5
+            CTX.fillStyle = `rgba(255, 255, 255, ${cursorIntensity})`
+            CTX.fillRect(
+                cursorX,
+                baselineY - DEFAULT_CHAR_HEIGHT + 4,
+                DEFAULT_CHAR_WIDTH - 4 | 0,
+                DEFAULT_CHAR_HEIGHT - 12 | 0
             )
         }
 
         CTX.fillStyle = textColor
-        CTX.fillText(text[0], x + DEFAULT_CHAR_WIDTH, y)
+        CTX.fillText(text[0], textX, baselineY)
         text.shift()
         frameRendered++
-        if (undefined === text[0]) {
+
+        if (text.length === 0) {
             writing = false
             CTX.clearRect(
-                x + DEFAULT_CHAR_WIDTH * 2,
-                y - DEFAULT_CURSOR_HEIGHT,
-                DEFAULT_CURSOR_WIDTH,
-                DEFAULT_CURSOR_HEIGHT
+                cursorX,
+                baselineY - DEFAULT_CHAR_HEIGHT + 4,
+                DEFAULT_CHAR_WIDTH - 4 | 0,
+                DEFAULT_CHAR_HEIGHT - 12 | 0
             )
             return [x, y, currentColumn, currentLine]
         }
-        CTX.fillStyle = highlighColor
-        CTX.fillText(text[0], x + DEFAULT_CHAR_WIDTH * 2, y)
 
-        eval(
-            frameRendered % ANIMATION_SPEED === 0 && !skipAnimation
-                ? 'requestAnimationFrame'
-                : 'callFn'
-        )(() =>
+        CTX.fillStyle = highlighColor
+        CTX.fillText(text[0], highlightX, baselineY)
+
+        if (frameRendered % ANIMATION_SPEED === 0 && !skipAnimation) {
+            requestAnimationFrame(() =>
+                drawChars(
+                    text,
+                    x + DEFAULT_CHAR_WIDTH,
+                    y,
+                    textColor,
+                    cursorColor,
+                    highlighColor,
+                    cursor,
+                    useGlow,
+                    false
+                )
+            )
+        } else {
             drawChars(
                 text,
                 x + DEFAULT_CHAR_WIDTH,
@@ -131,9 +291,11 @@
                 textColor,
                 cursorColor,
                 highlighColor,
-                cursor
+                cursor,
+                useGlow,
+                false
             )
-        )
+        }
         return [x + DEFAULT_CHAR_WIDTH, y, currentColumn, currentLine]
     }
 
@@ -146,34 +308,65 @@
         textColor = '#0a0',
         cursorColor = '#fff',
         highlighColor = '#0f0',
-        cursor = true
+        cursor = true,
+        useEncryptEffect = false
     ) => {
-        let [_x, _y, c, l] = []
-        if (!writing) {
-            writing = true
-                ;[_x, _y, c, l] = drawChars(
-                    [...text],
-                    x,
-                    y,
-                    textColor,
-                    cursorColor,
-                    highlighColor,
-                    cursor
-                )
-        } else {
-            requestAnimationFrame(() => {
-                ;[_x, _y, c, l] = _writeText(
-                    text,
-                    x,
-                    y,
-                    textColor,
-                    cursorColor,
-                    highlighColor,
-                    cursor
-                )
-            })
-        }
-        return [_x, _y, currentColumn, currentLine]
+        return new Promise((resolve) => {
+                const startWriting = () => {
+                    if (useEncryptEffect) {
+                        let progress = 0
+                        const encryptAnimation = () => {
+                            progress += 0.15
+                            const encrypted = encryptText(text, progress)
+
+                            const maxTextLength = 8
+                            CTX.clearRect(x, y, maxTextLength * DEFAULT_CHAR_WIDTH, DEFAULT_CHAR_HEIGHT)
+
+                        CTX.fillStyle = highlighColor
+                        CTX.fillText(encrypted, x, y + TEXT_BASELINE_OFFSET)
+
+                        if (progress < 1) {
+                            requestAnimationFrame(encryptAnimation)
+                        } else {
+                            const [finalX, finalY, c, l] = drawChars(
+                                [...text],
+                                x,
+                                y,
+                                textColor,
+                                cursorColor,
+                                highlighColor,
+                                cursor,
+                                false
+                            )
+                            resolve([finalX, finalY, currentColumn, currentLine])
+                        }
+                    }
+                    encryptAnimation()
+                } else {
+                    const [finalX, finalY, c, l] = drawChars(
+                        [...text],
+                        x,
+                        y,
+                        textColor,
+                        cursorColor,
+                        highlighColor,
+                        cursor,
+                        false
+                    )
+                    resolve([finalX, finalY, currentColumn, currentLine])
+                }
+            }
+
+            if (!writing) {
+                writing = true
+                startWriting()
+            } else {
+                requestAnimationFrame(() => {
+                    _writeText(text, x, y, textColor, cursorColor, highlighColor, cursor, useEncryptEffect)
+                        .then(resolve)
+                })
+            }
+        })
     }
 
     const writeln = (
@@ -233,14 +426,17 @@
         highlighColor = '#0f0',
         cursor = true
     ) => {
-        const [x, y, c, l] = drawChars(
+        const x = currentColumn * DEFAULT_CHAR_WIDTH
+        const y = currentLine * DEFAULT_CHAR_HEIGHT
+        drawChars(
             [...text],
-            currentColumn * DEFAULT_CHAR_WIDTH,
-            currentLine * DEFAULT_CHAR_HEIGHT,
+            x,
+            y,
             textColor,
             cursorColor,
             highlighColor,
-            cursor
+            false,
+            false
         )
         currentColumn += text.length + 1
         return [x, y, currentColumn, currentLine]
@@ -253,14 +449,17 @@
         highlighColor = '#0f0',
         cursor = true
     ) => {
-        const [x, y, c, l] = drawChars(
+        const x = currentColumn * DEFAULT_CHAR_WIDTH
+        const y = currentLine * DEFAULT_CHAR_HEIGHT
+        drawChars(
             [...text],
-            currentColumn * DEFAULT_CHAR_WIDTH,
-            currentLine * DEFAULT_CHAR_HEIGHT,
+            x,
+            y,
             textColor,
             cursorColor,
             highlighColor,
-            cursor
+            false,
+            false
         )
         currentColumn = 1
         currentLine++
@@ -268,12 +467,14 @@
     }
 
     const printHello = () => {
-        welcomeTitle.split('\n').forEach((e, i) => {
-            const centerOffsetTimes = Math.floor(
-                (innerWidth / DEFAULT_CHAR_WIDTH - WELCOMETITLE_LINE_CHARS) / 2
-            )
-            let lineStr = i === 1 || i === 10 ? '='.repeat(centerOffsetTimes) + e + '='.repeat(centerOffsetTimes - 4) : ' '.repeat(centerOffsetTimes) + e
-            lineStr = 9 === i ? lineStr + 'Ver ' + VERSION : lineStr
+        const titleLines = welcomeTitle.split('\n')
+        const centerOffsetTimes = Math.floor(
+            (innerWidth / DEFAULT_CHAR_WIDTH - WELCOMETITLE_LINE_CHARS) / 2
+        )
+
+        titleLines.forEach((e, i) => {
+            let lineStr = i === 1 || i === 15 ? '='.repeat(centerOffsetTimes) + e + '='.repeat(centerOffsetTimes - 4) : ' '.repeat(centerOffsetTimes) + e
+            lineStr = 14 === i ? lineStr + ' Ver ' + VERSION : lineStr
             writelnParcel(lineStr, '#0a0', '#fff', '#abc', false)
         })
     }
@@ -285,10 +486,51 @@
         requestAnimationFrame(writeDots)
     }
 
-    const getIP = () => httpGet('https://geo.risk3sixty.com/me')
+    let cachedIPData = null
+    const getIP = () => {
+        if (cachedIPData) {
+            return Promise.resolve(cachedIPData)
+        }
+        return httpGet('https://geo.risk3sixty.com/me').then(data => {
+            cachedIPData = data
+            return data
+        })
+    }
 
-    const getMirrorLatency = (url) => {
-        return fetch(url, { mode: 'no-cors', cache: 'reload' })
+    const latencyCache = new Map()
+    const getMirrorLatency = async (url) => {
+        try {
+            const urlObj = new URL(url)
+            const host = urlObj.hostname
+            const port = urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80)
+
+            const t = performance.now()
+            await new Promise((resolve, reject) => {
+                const socket = new WebSocket(`ws://${host}:${port}`)
+                socket.onopen = () => {
+                    socket.close()
+                    resolve()
+                }
+                socket.onerror = () => {
+                    socket.close()
+                    resolve()
+                }
+                socket.onclose = () => {
+                    resolve()
+                }
+
+                setTimeout(() => {
+                    try {
+                        socket.close()
+                    } catch (e) {}
+                    resolve()
+                }, 5000)
+            })
+            return Math.round(performance.now() - t)
+        } catch (err) {
+            console.error('Ping error:', err)
+            return 9999
+        }
     }
 
     //get longest string in array
@@ -296,90 +538,127 @@
         arr.reduce((a, b) => (a.length > b.length ? a : b))
 
     const main = () => {
-        CTX.font = '.9687499701rem cursive'
+        CTX.font = '1rem cursive'
         CTX.fillStyle = '#0f0'
+        DEFAULT_CHAR_WIDTH = CTX.measureText('M').width
 
         printHello()
         writeParcel('Local time :')
         writelnParcel(
-            `${new Intl.DateTimeFormat('en-US', {
+            ` ${new Intl.DateTimeFormat('en-US', {
                 dateStyle: 'full',
                 timeStyle: 'long',
             }).format(new Date())}`,
             '#fff',
             '#0f0',
             '#00f',
-            true
+            false
         )
         const [x, y, c, l] = writeParcel('IP addr :')
         currentColumn = 1
         currentLine++
 
         getIP().then((ipData) => {
-            const ipStr = `${ipData.ip} / ${ipData.country}${'' === ipData.region ? '' : ' / ' + ipData.region + ' / '
-                }${'' === ipData.city ? '' : ipData.city}`
+            const ipStr = `${ipData.ip} / ${ipData.country}${ipData.region ? ' / ' + ipData.region : ''}${ipData.city ? ' / ' + ipData.city : ''}`
+
             _writeText(
                 ipStr,
-                Math.floor(DEFAULT_CHAR_WIDTH * c),
-                y,
+                (DEFAULT_CHAR_WIDTH * c) | 0,
+                y | 0,
                 '#fff',
                 '#0f0',
                 '#00f',
+                false,
                 true
             )
+
+            setTimeout(() => {
+                CTX.fillStyle = 'rgba(255, 255, 255, 0.4)'
+                CTX.fillRect((DEFAULT_CHAR_WIDTH * c) | 0, y | 0, ipStr.length * DEFAULT_CHAR_WIDTH, DEFAULT_CHAR_HEIGHT)
+                setTimeout(() => {
+                    CTX.fillStyle = '#000'
+                    CTX.fillRect((DEFAULT_CHAR_WIDTH * c) | 0, y | 0, ipStr.length * DEFAULT_CHAR_WIDTH, DEFAULT_CHAR_HEIGHT)
+
+                    CTX.fillStyle = '#fff'
+                    CTX.fillText(ipStr, (DEFAULT_CHAR_WIDTH * c) | 0, y + TEXT_BASELINE_OFFSET)
+                }, 80)
+            }, 200)
         })
 
         listFetch(getLongestString(Object.keys(MIRROR_LIST)).length)
-
-        // writeParcel(await getGeo(ip), '#fff', '#0f0', '#00f', true)
     }
 
     const listFetch = (longestLength) => {
-        for (const m of Object.entries(MIRROR_LIST)) {
-            console.log(m)
-            const t = new Date()
-            getMirrorLatency(m[1]).then((_) => {
-                const timeEscaped = new Date() - t
-                const flagStr = `${' '.repeat(longestLength - m[0].length)}${m[0]
-                    } :`
-                const [x, y, c, l] = writelnParcel(
-                    `${flagStr} ${timeEscaped}ms${' '.repeat(
-                        5 - timeEscaped.toString().length
-                    )}`,
-                    '#0a0',
-                    '#0f0',
-                    '#fff',
-                    true
-                )
-                console.log([x, y, c, l])
-                Array.from(Array(CONTINUOUS_PING_TIMES)).forEach((_, i) => {
-                    setTimeout(() => {
-                        const usedSpace = (flagStr.length + 12) * DEFAULT_CHAR_WIDTH
-                        const leftSpace = innerWidth - usedSpace
-                        const blankBlock = leftSpace / CONTINUOUS_PING_TIMES
-                        const t = new Date()
-                        getMirrorLatency(m[1]).then((_) => {
-                            const timeoutDelayStr = `${new Date() - t}ms`
-                            _writeText(
-                                timeoutDelayStr,
-                                Math.floor(
-                                    usedSpace +
-                                    blankBlock * i +
-                                    blankBlock -
-                                    12 * DEFAULT_CHAR_WIDTH
-                                ),
-                                y,
-                                '#0a0',
-                                '#0f0',
-                                '#fff',
-                                true
-                            )
-                        })
-                    }, i * 1000)
-                })
+        const mirrorEntries = Object.entries(MIRROR_LIST)
+
+        // 先预分配所有行
+        mirrorEntries.forEach((m) => {
+            const mirrorName = m[0]
+            const flagStr = `${' '.repeat(longestLength - mirrorName.length)}${mirrorName}:`
+
+            const x = currentColumn * DEFAULT_CHAR_WIDTH
+            const initialY = currentLine * DEFAULT_CHAR_HEIGHT
+
+            // 显示名称
+            CTX.fillStyle = '#0f0'
+            CTX.fillText(flagStr, x, initialY + TEXT_BASELINE_OFFSET)
+
+            // 计算延迟显示位置
+            const usedSpace = (flagStr.length + 12) * DEFAULT_CHAR_WIDTH
+            const leftSpace = innerWidth - usedSpace
+            const blankBlock = leftSpace / CONTINUOUS_PING_TIMES
+
+            // 预填充占位符
+            for (let i = 0; i < CONTINUOUS_PING_TIMES; i++) {
+                const px = (usedSpace + blankBlock * i + blankBlock - 12 * DEFAULT_CHAR_WIDTH) | 0
+                CTX.fillStyle = '#333'
+                CTX.fillText('--', px + 24, initialY + TEXT_BASELINE_OFFSET)
+            }
+
+            currentColumn = 1
+            currentLine++
+        })
+
+        // 然后异步获取延迟数据并更新
+        mirrorEntries.forEach((m, index) => {
+            const mirrorName = m[0]
+            const mirrorUrl = m[1]
+            const flagStr = `${' '.repeat(longestLength - mirrorName.length)}${mirrorName}:`
+
+            const startY = (index + currentLine - mirrorEntries.length + 1) * DEFAULT_CHAR_HEIGHT
+            const usedSpace = (flagStr.length + 12) * DEFAULT_CHAR_WIDTH
+            const leftSpace = innerWidth - usedSpace
+            const blankBlock = leftSpace / CONTINUOUS_PING_TIMES
+
+            // 第一次延迟
+            getMirrorLatency(mirrorUrl).then((timeEscaped) => {
+                const latencyColor = getLatencyColor(timeEscaped)
+                const px = (usedSpace + blankBlock - 12 * DEFAULT_CHAR_WIDTH) | 0
+
+                CTX.clearRect(px, startY, 8 * DEFAULT_CHAR_WIDTH, DEFAULT_CHAR_HEIGHT)
+                CTX.fillStyle = latencyColor
+                CTX.fillText(`${timeEscaped}ms`, px, startY + TEXT_BASELINE_OFFSET)
             })
-        }
+
+            // 连续6次延迟
+            for (let i = 0; i < CONTINUOUS_PING_TIMES; i++) {
+                setTimeout(() => {
+                    getMirrorLatency(mirrorUrl).then((timeoutDelayMs) => {
+                        const latencyColor = getLatencyColor(timeoutDelayMs)
+                        const px = (usedSpace + blankBlock * i + blankBlock - 12 * DEFAULT_CHAR_WIDTH) | 0
+
+                        CTX.clearRect(px, startY, 8 * DEFAULT_CHAR_WIDTH, DEFAULT_CHAR_HEIGHT)
+                        CTX.fillStyle = latencyColor
+                        CTX.fillText(`${timeoutDelayMs}ms`, px, startY + TEXT_BASELINE_OFFSET)
+                    }).catch((err) => {
+                        console.error('Ping error:', err)
+                    })
+                }, (i + 1) * 1000)
+            }
+        })
     }
 
     main()
 </script>
+</body>
+</html>

@@ -505,32 +505,27 @@
 
         // 根据当前页面协议选择 HTTP 或 HTTPS
         const protocol = location.protocol === 'https:' ? 'https:' : 'http:'
-        const fetchUrl = `${protocol}//${address}`
-
-        const controller = new AbortController()
-        const startTime = performance.now()
-
-        const timeoutId = setTimeout(() => controller.abort(), 5000)
+        const fetchUrl = `${protocol}//${address}/?t=${Math.random()}`
+        const start = performance.now()
 
         try {
-            console.log(`Fetching: ${fetchUrl}`)
-            await fetch(fetchUrl, {
-                mode: 'no-cors',
-                signal: controller.signal
-            })
-            clearTimeout(timeoutId)
-            const duration = Math.round(performance.now() - startTime)
-            console.log(`Success: ${fetchUrl} -> ${duration}ms`)
-            return duration
-        } catch (err) {
-            clearTimeout(timeoutId)
-            const duration = Math.round(performance.now() - startTime)
-            console.error(`Error: ${fetchUrl} -> ${duration}ms`, err)
-            if (err.name === 'AbortError') {
-                return 5000
-            }
-            return duration
+            await fetch(fetchUrl, { mode: 'no-cors', cache: 'no-store' })
+        } catch (e) {
+            // 即使 fetch 报错，TCP 可能已经建立，继续尝试获取 timing
         }
+
+        // 获取性能条目
+        const entries = performance.getEntriesByName(fetchUrl)
+        if (entries.length > 0) {
+            const entry = entries[entries.length - 1]
+            // 如果能拿到 connectEnd 和 connectStart，这就是最准的 TCP 握手时间
+            if (entry.connectEnd > 0 && entry.connectStart > 0) {
+                return Math.round(entry.connectEnd - entry.connectStart)
+            }
+        }
+
+        // 降级方案：如果拿不到性能数据（因为跨域限制），只能用总耗时
+        return Math.round(performance.now() - start)
     }
 
     //get longest string in array

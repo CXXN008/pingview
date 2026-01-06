@@ -155,78 +155,84 @@ const getLatencyColor = (ms) => {
     return '#0f0'  // 橙色替代绿色
 }
 
-const MATRIX_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?'
+// 黑客帝国风格的数字雨字符池
+const MATRIX_DIGITS = '0123456789'
+const MATRIX_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+const MATRIX_SYMBOLS = '@#$%^&*()_+-=[]{}|;:,.<>?'
+// 日文片假名更适合矩阵风格（竖长形状）
+const MATRIX_JAPANESE = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン'
+// 韩文辅音字母
+const MATRIX_KOREAN = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ'
+// 组合成最终字符池，数字权重更高（矩阵中数字最常见）
+const MATRIX_ALL_CHARS = MATRIX_DIGITS.repeat(4) + MATRIX_LETTERS + MATRIX_SYMBOLS + MATRIX_JAPANESE + MATRIX_KOREAN
+
 const COLUMN_DROPS = []
-const FONT_SIZE = 14
-let matrixCharPool = []
-let matrixActive = false
+const FONT_SIZE = 16  // 增大字体，更接近电影效果
+const COLUMN_WIDTH = 20  // 固定列宽，确保垂直对齐
+let matrixActive = true  // 始终激活数字雨
+
+// DNS相关变量（与数字雨分离）
 let activeRequestCount = 0
 
-const startMatrixIfNeeded = () => {
-    if (!matrixActive && (matrixCharPool.length > 0 || activeRequestCount > 0)) {
-        matrixActive = true
-        initMatrix()
-        animateMatrix()
-    }
-}
-
-const addToMatrixPool = (data) => {
-    let text
-    if (typeof data === 'string') {
-        text = data
-    } else {
-        text = JSON.stringify(data)
-    }
-    const chars = text.split('').filter(char => char.trim() !== '')
-    matrixCharPool.push(...chars)
-    startMatrixIfNeeded()
-}
-
 const initMatrix = () => {
-    const columns = Math.floor(MATRIX_CANVAS.width / FONT_SIZE)
+    // 使用固定列宽确保字符垂直对齐，创造经典的矩阵列效果
+    const columns = Math.floor(MATRIX_CANVAS.width / COLUMN_WIDTH)
     COLUMN_DROPS.length = 0
     for (let i = 0; i < columns; i++) {
-        COLUMN_DROPS[i] = Math.random() * -100
+        // 随机起始位置，创造错落有致的效果
+        COLUMN_DROPS[i] = Math.random() * -200
     }
 }
 
 const drawMatrix = () => {
-    MATRIX_CTX.fillStyle = 'rgba(0, 0, 0, 0.05)'
+    // 黑客帝国风格：使用较快的淡化速度，创造经典的"拖尾"效果
+    const time = Date.now() * 0.003  // 更高的频率
+    const fadeOpacity = 0.1 + 0.05 * Math.sin(time * 1.2)  // 更快的周期变化
+    MATRIX_CTX.fillStyle = `rgba(0, 0, 0, ${fadeOpacity})`
     MATRIX_CTX.fillRect(0, 0, MATRIX_CANVAS.width, MATRIX_CANVAS.height)
 
-    // 如果没有字符且没有活跃请求，停止动画
-    if (matrixCharPool.length === 0 && activeRequestCount === 0) {
-        matrixActive = false
-        return
-    }
+    // 设置字体为等宽字体，确保字符对齐
+    MATRIX_CTX.font = `${FONT_SIZE}px 'Courier New', monospace`
+    MATRIX_CTX.textBaseline = 'top'
 
-    MATRIX_CTX.fillStyle = '#0f0'
-    MATRIX_CTX.font = `${FONT_SIZE}px monospace`
-
-    // 计算速度因子：基础速度1，每个活跃请求增加0.5
-    const speedFactor = 1 + (activeRequestCount * 0.5)
+    // 计算速度因子
+    const speedFactor = 1 + (activeRequestCount * 0.2)
 
     for (let i = 0; i < COLUMN_DROPS.length; i++) {
-        // 如果池子为空，跳过绘制（但仍需更新位置？）
-        if (matrixCharPool.length === 0) {
-            // 池子为空但仍有活跃请求，继续动画但不绘制字符
-            continue
-        }
-
-        // 从池中随机选取一个字符
-        const randomIndex = Math.floor(Math.random() * matrixCharPool.length)
-        const text = matrixCharPool[randomIndex]
-        const x = i * FONT_SIZE
+        // 从字符池中选择字符
+        const randomIndex = Math.floor(Math.random() * MATRIX_ALL_CHARS.length)
+        const text = MATRIX_ALL_CHARS[randomIndex]
+        
+        // 使用固定列宽确保垂直对齐
+        const x = i * COLUMN_WIDTH + 2  // 加2像素边距
         const y = COLUMN_DROPS[i] * FONT_SIZE
 
-        // 绿色系配色
-        MATRIX_CTX.fillStyle = `rgba(0, ${150 + Math.random() * 105}, 0, ${0.3 + Math.random() * 0.7})`
+        // 黑客帝国经典效果：前导字符为亮白色，其余为绿色渐变
+        const distanceFromTop = y / MATRIX_CANVAS.height
+        
+        if (distanceFromTop < 0.1) {
+            // 前导字符：亮白色，模拟"光头"效果
+            MATRIX_CTX.fillStyle = '#ffffff'
+            MATRIX_CTX.shadowColor = '#00ff00'
+            MATRIX_CTX.shadowBlur = 8
+        } else {
+            // 尾部字符：绿色渐变，距离越远越暗
+            const intensity = Math.max(0.1, 1.0 - distanceFromTop)
+            const greenValue = Math.floor(255 * intensity)
+            MATRIX_CTX.fillStyle = `rgb(0, ${greenValue}, 0)`
+            MATRIX_CTX.shadowColor = `rgba(0, 255, 0, ${intensity * 0.5})`
+            MATRIX_CTX.shadowBlur = 4
+        }
+        
+        // 绘制字符
         MATRIX_CTX.fillText(text, x, y)
+        
+        // 重置阴影
+        MATRIX_CTX.shadowBlur = 0
 
-        if (y > MATRIX_CANVAS.height && Math.random() > 0.975) {
-            COLUMN_DROPS[i] = 0
-            // 移除已使用的字符
-            matrixCharPool.splice(randomIndex, 1)
+        // 重置条件：字符超出屏幕时重新开始
+        if (y > MATRIX_CANVAS.height + FONT_SIZE) {
+            COLUMN_DROPS[i] = Math.random() * -50  // 快速重置到顶部
         }
 
         COLUMN_DROPS[i] += speedFactor
@@ -234,7 +240,6 @@ const drawMatrix = () => {
 }
 
 const animateMatrix = () => {
-    if (!matrixActive) return
     drawMatrix()
     requestAnimationFrame(animateMatrix)
 }
@@ -563,11 +568,10 @@ const resolveDNS = async (domain) => {
     }
 
     activeRequestCount++
-    startMatrixIfNeeded()
+    // 不再启动数字雨，DNS功能独立于数字雨
     try {
         const response = await fetch(`https://dns.alidns.com/resolve?name=${domain}&type=1`)
         const data = await response.json()
-        addToMatrixPool(data)
         
         if (data.Answer && data.Answer.length > 0) {
             const ips = data.Answer
@@ -592,11 +596,10 @@ const getIPLocation = async (ip) => {
     }
 
     activeRequestCount++
-    startMatrixIfNeeded()
+    // 不再启动数字雨，DNS功能独立于数字雨
     try {
         const response = await fetch(`https://geo.risk3sixty.com/${ip}`)
         const data = await response.json()
-        addToMatrixPool(data)
         ipLocationCache.set(ip, data)
         return data
     } catch (e) {
@@ -640,6 +643,10 @@ const main = () => {
     CTX.font = '1rem cursive'
     CTX.fillStyle = '#fa0'
     DEFAULT_CHAR_WIDTH = CTX.measureText('M').width
+
+    // 初始化并开始数字雨（独立于DNS功能）
+    initMatrix()
+    animateMatrix()
 
     printHello()
     writeParcel(' Local time :')

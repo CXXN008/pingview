@@ -1,0 +1,62 @@
+body {
+    margin: 0;
+    background-color: black;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+#matrix {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+#main {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+}
+
+.scanline {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1000;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    animation: scanlines 0.1s linear infinite;
+}
+
+.crt-flicker {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+    background: rgba(0, 255, 0, 0.02);
+    animation: flicker 0.15s infinite;
+    box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.9);
+}
+
+@keyframes scanlines {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(2px); }
+}
+
+@keyframes flicker {
+    0% { opacity: 0.97; }
+    50% { opacity: 1; }
+    100% { opacity: 0.98; }
+}
